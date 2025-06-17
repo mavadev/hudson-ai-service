@@ -95,7 +95,6 @@ def chat_by_doc(input: UserInput):
                     "index_name": os.getenv("SEARCH_INDEX_NAME"),
                     "semantic_configuration": "default",
                     "query_type": "semantic",
-                    "filter": "title eq 'HU108.pdf'",
                     "strictness": 3,
                     "top_n_documents": 5,
                     "authentication": {
