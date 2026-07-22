@@ -1,27 +1,36 @@
-# Entornos virtuales
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
 venv/
 env/
-.venv/
-.env/
 
-# Archivos de configuración sensibles
-*.env
-
-# Cache de Python
+# Python cache
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
 
-# Archivos de logs
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Logs
 *.log
 
-# Config de IDEs
+# Editors
 .vscode/
 .idea/
 
-# Archivos de sistema
+# Operating system
 .DS_Store
 Thumbs.db
 
-# Otros (por si acaso)
+# Local databases
 *.sqlite3
