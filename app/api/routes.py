@@ -1,18 +1,16 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
 from app.core.prompts import PROMPT_GENERAL, PROMPT_QA
 from app.schemas.chat import ChatRequest, ChatResponse, HealthResponse
 from app.services.gemini_service import gemini_service
 
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
 @router.get(
     "/health",
     response_model=HealthResponse,
@@ -26,46 +24,51 @@ def health_check() -> HealthResponse:
         model=settings.gemini_model,
     )
 
-
 @router.post(
     "/chat/general",
     response_model=ChatResponse,
     tags=["Chat"],
 )
-def chat_general(data: ChatRequest) -> ChatResponse:
-    return generate_ai_response(
+async def chat_general(data: ChatRequest) -> ChatResponse:
+    return await generate_ai_response(
         system_prompt=PROMPT_GENERAL,
         user_message=data.user_message,
     )
 
+@router.post("/chat/general/stream", tags=["Chat"])
+async def chat_general_stream(data: ChatRequest):
+    return StreamingResponse(
+        gemini_service.generate_stream_response(
+            system_prompt=PROMPT_GENERAL,
+            user_message=data.user_message,
+        ),
+        media_type="text/event-stream",
+    )
 
 @router.post(
     "/chat/qa",
     response_model=ChatResponse,
     tags=["Chat"],
 )
-def chat_qa(data: ChatRequest) -> ChatResponse:
-    return generate_ai_response(
+async def chat_qa(data: ChatRequest) -> ChatResponse:
+    return await generate_ai_response(
         system_prompt=PROMPT_QA,
         user_message=data.user_message,
     )
 
-
-def generate_ai_response(
+async def generate_ai_response(
     system_prompt: str,
     user_message: str,
 ) -> ChatResponse:
     try:
-        response = gemini_service.generate_response(
+        response = await gemini_service.generate_response(
             system_prompt=system_prompt,
             user_message=user_message,
         )
-
         return ChatResponse(response=response)
 
     except Exception as error:
         logger.exception("Error al generar la respuesta de IA.")
-
         raise map_ai_error(error) from error
 
 

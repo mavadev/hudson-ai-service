@@ -1,8 +1,9 @@
+import asyncio
 import logging
-import time
 
 from google import genai
 from google.genai import types
+from typing import AsyncGenerator
 
 from app.core.config import settings
 
@@ -13,17 +14,12 @@ class GeminiService:
         self.client = genai.Client(api_key=settings.gemini_api_key)
         self.model = settings.gemini_model
 
-    def generate_response(
-        self,
-        system_prompt: str,
-        user_message: str,
-    ) -> str:
+    async def _call_genai(self, model: str, system_prompt: str, user_message: str) -> str:
         delays = (2, 5, 10)
-
         for attempt, delay in enumerate(delays, start=1):
             try:
-                response = self.client.models.generate_content(
-                    model=self.model,
+                response = await self.client.aio.models.generate_content(
+                    model=model,
                     contents=user_message,
                     config=types.GenerateContentConfig(
                         system_instruction=system_prompt,
@@ -32,38 +28,17 @@ class GeminiService:
                         max_output_tokens=1_200,
                     ),
                 )
-
                 if not response.text:
-                    raise RuntimeError(
-                        "El proveedor de IA no devolvió contenido."
-                    )
-
+                    raise RuntimeError("El proveedor de IA no devolvió contenido.")
                 return response.text.strip()
-
             except Exception as error:
-                if not self._is_temporary_error(error):
-                    raise
-
-                if attempt == len(delays):
-                    raise
-
-                logger.warning(
-                    "Gemini no está disponible. Reintento %s de %s en %s segundos.",
-                    attempt,
-                    len(delays),
-                    delay,
-                )
-
-                time.sleep(delay)
-
-        raise RuntimeError(
-            "No fue posible obtener una respuesta del proveedor de IA."
-        )
+                if not self._is_temporary_error(error) or attempt == len(delays):
+                    raise error
+                await asyncio.sleep(delay)
 
     @staticmethod
     def _is_temporary_error(error: Exception) -> bool:
         message = str(error).lower()
-
         temporary_markers = (
             "429",
             "503",
@@ -73,8 +48,71 @@ class GeminiService:
             "deadline exceeded",
             "timeout",
         )
-
         return any(marker in message for marker in temporary_markers)
 
+    async def generate_response(
+        self,
+        system_prompt: str,
+        user_message: str,
+    ) -> str:
+        # Intentar primero con el modelo configurado
+        try:
+            return await self._call_genai(self.model, system_prompt, user_message)
+        except Exception as error:
+            if self._is_temporary_error(error):
+                logger.warning("Modelo principal saturado. Usando modelo de respaldo...")
+                # Fallback a un modelo alternativo
+                return await self._call_genai("gemini-2.5-flash", system_prompt, user_message)
+            raise error
+    
+    async def generate_stream_response(
+        self,
+        system_prompt: str,
+        user_message: str,
+    ) -> AsyncGenerator[str, None]:
+        delays = (2, 5, 10)
+        models_to_try = [self.model, "gemini-2.5-flash", "gemini-1.5-flash"]
+
+        for model_name in models_to_try:
+            for attempt, delay in enumerate(delays, start=1):
+                try:
+                    response = await self.client.aio.models.generate_content_stream(
+                        model=model_name,
+                        contents=user_message,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_prompt,
+                            temperature=0.7,
+                            top_p=0.95,
+                            max_output_tokens=1_200,
+                        ),
+                    )
+                    # Consumimos e iteramos los fragmentos
+                    async for chunk in response:
+                        if chunk.text:
+                            yield chunk.text
+                    # Si completó el stream con éxito, salimos de la función
+                    return
+
+                except Exception as error:
+                    if not self._is_temporary_error(error):
+                        raise
+
+                    logger.warning(
+                        "Gemini (%s) no disponible (Intento %s/%s). Esperando %ss...",
+                        model_name,
+                        attempt,
+                        len(delays),
+                        delay,
+                    )
+
+                    if attempt < len(delays):
+                        await asyncio.sleep(delay)
+
+            logger.warning(
+                "El modelo %s falló tras varios reintentos. Probando modelo alternativo...",
+                model_name,
+            )
+        # Si todos los modelos fallan
+        yield "El servicio de IA se encuentra actualmente saturado. Por favor, intente de nuevo en unos momentos."
 
 gemini_service = GeminiService()
