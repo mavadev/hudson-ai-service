@@ -32,9 +32,4 @@ class ChatResponse(BaseModel):
     response: str
 
 
-class Message(BaseModel):
-    role: str
-    content: str
-
-
 ChatRequest.model_rebuild()

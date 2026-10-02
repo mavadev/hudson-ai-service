@@ -12,7 +12,6 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-
 app = FastAPI(
     title="Hudson AI Service",
     description=(
@@ -24,7 +23,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-
 allowed_origins = [
     origin.strip()
     for origin in os.getenv(
@@ -34,7 +32,6 @@ allowed_origins = [
     if origin.strip()
 ]
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -42,7 +39,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
-
 
 app.include_router(router)
 

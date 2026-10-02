@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
-from app.core.prompts import PROMPT_GENERAL, PROMPT_QA
+from app.core.prompts import PROMPT_GENERAL
 from app.schemas.chat import ChatRequest, ChatResponse, HealthResponse
 from app.services.gemini_service import gemini_service
 
@@ -27,18 +27,6 @@ def health_check() -> HealthResponse:
     )
 
 
-@router.post(
-    "/chat/general",
-    response_model=ChatResponse,
-    tags=["Chat"],
-)
-async def chat_general(data: ChatRequest) -> ChatResponse:
-    return await generate_ai_response(
-        system_prompt=PROMPT_GENERAL,
-        user_message=data.user_message,
-    )
-
-
 @router.post("/chat/general/stream", tags=["Chat"])
 async def chat_general_stream(data: ChatRequest):
     return StreamingResponse(
@@ -52,13 +40,13 @@ async def chat_general_stream(data: ChatRequest):
 
 
 @router.post(
-    "/chat/qa",
+    "/chat/general",
     response_model=ChatResponse,
     tags=["Chat"],
 )
-async def chat_qa(data: ChatRequest) -> ChatResponse:
+async def chat_general(data: ChatRequest) -> ChatResponse:
     return await generate_ai_response(
-        system_prompt=PROMPT_QA,
+        system_prompt=PROMPT_GENERAL,
         user_message=data.user_message,
     )
 
