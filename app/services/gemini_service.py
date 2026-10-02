@@ -78,29 +78,45 @@ class GeminiService:
         system_prompt: str,
         user_message: str,
         history: List[MessageItem] = None,
+        max_history_turns: int = 10,
     ) -> AsyncGenerator[str, None]:
         delays = (2, 5, 10)
         models_to_try = [self.model, "gemini-2.5-flash", "gemini-1.5-flash"]
-
         formatted_contents = []
 
-        if history:
-            for msg in history:
-                # Convertimos el rol de assistant a model
-                role = "model" if msg.role in ["assistant", "model"] else "user"
-                formatted_contents.append(
-                    types.Content(
-                        role=role, parts=[types.Part.from_text(text=msg.content)]
-                    )
-                )
+        # Recortamos el historial para mantener solo los últimos N mensajes
+        recent_history = history[-max_history_turns:] if history else []
 
-            # Añadimos el mensaje actual del usuario al final del historial
-            formatted_contents.append(
-                types.Content(
-                    role="user", parts=[types.Part.from_text(text=user_message)]
+        # Agregamos el historial previo como contexto general
+        if recent_history:
+            for msg in recent_history:
+                if msg.content and msg.content.strip():
+                    role = "model" if msg.role in ["assistant", "model"] else "user"
+                    formatted_contents.append(
+                        {"role": role, "parts": [{"text": msg.content.strip()}]}
+                    )
+
+        # Enfatizamos el mensaje actual del usuario
+        if user_message and user_message.strip():
+            # Si hay historial, le marcamos explícitamente la prioridad
+            if recent_history:
+                prompt_with_focus = (
+                    f"[Atención: Responde prioritariamente a la siguiente consulta actual del usuario. "
+                    f"Utiliza el historial anterior únicamente como contexto secundario o de referencia]:\n\n"
+                    f"{user_message.strip()}"
                 )
+            else:
+                prompt_with_focus = user_message.strip()
+
+            formatted_contents.append(
+                {"role": "user", "parts": [{"text": prompt_with_focus}]}
             )
 
+        if not formatted_contents:
+            yield "El mensaje recibido está vacío."
+            return
+
+        # Petición a Gemini
         for model_name in models_to_try:
             for attempt, delay in enumerate(delays, start=1):
                 try:
