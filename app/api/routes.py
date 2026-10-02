@@ -11,6 +11,8 @@ from app.services.gemini_service import gemini_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
 @router.get(
     "/health",
     response_model=HealthResponse,
@@ -24,6 +26,7 @@ def health_check() -> HealthResponse:
         model=settings.gemini_model,
     )
 
+
 @router.post(
     "/chat/general",
     response_model=ChatResponse,
@@ -35,15 +38,18 @@ async def chat_general(data: ChatRequest) -> ChatResponse:
         user_message=data.user_message,
     )
 
+
 @router.post("/chat/general/stream", tags=["Chat"])
 async def chat_general_stream(data: ChatRequest):
     return StreamingResponse(
         gemini_service.generate_stream_response(
             system_prompt=PROMPT_GENERAL,
             user_message=data.user_message,
+            history=data.history or [],
         ),
         media_type="text/event-stream",
     )
+
 
 @router.post(
     "/chat/qa",
@@ -55,6 +61,7 @@ async def chat_qa(data: ChatRequest) -> ChatResponse:
         system_prompt=PROMPT_QA,
         user_message=data.user_message,
     )
+
 
 async def generate_ai_response(
     system_prompt: str,
