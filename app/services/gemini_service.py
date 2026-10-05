@@ -1,7 +1,8 @@
 import asyncio
 import logging
-from typing import AsyncGenerator, List
+from typing import AsyncGenerator, List, Optional
 
+from fastapi import Request
 from google import genai
 from google.genai import types
 
@@ -54,7 +55,7 @@ class GeminiService:
         )
         return any(marker in message for marker in temporary_markers)
 
-    async def generate_response(
+    async def generate_title_response(
         self,
         system_prompt: str,
         user_message: str,
@@ -69,7 +70,7 @@ class GeminiService:
                 )
                 # Fallback a un modelo alternativo
                 return await self._call_genai(
-                    "gemini-2.5-flash", system_prompt, user_message
+                    "gemini-3.8-flash", system_prompt, user_message
                 )
             raise error
 
@@ -79,6 +80,7 @@ class GeminiService:
         user_message: str,
         history: List[MessageItem] = None,
         max_history_turns: int = 10,
+        request: Optional[Request] = None,
     ) -> AsyncGenerator[str, None]:
         delays = (2, 5, 10)
         models_to_try = [self.model, "gemini-2.5-flash", "gemini-1.5-flash"]
@@ -132,12 +134,23 @@ class GeminiService:
                     )
                     # Consumimos e iteramos los fragmentos
                     async for chunk in response:
+                        # Verificar si el cliente canceló la conexión
+                        if request and await request.is_disconnected():
+                            logger.info(
+                                "[FastAPI] El cliente canceló la solicitud. Abortando stream."
+                            )
+                            return
+
                         if chunk.text:
                             yield chunk.text
                     # Si completó el stream con éxito, salimos de la función
                     return
 
                 except Exception as error:
+                    # Evitar reintentos si la razón de la falla fue la desconexión
+                    if request and await request.is_disconnected():
+                        return
+
                     if not self._is_temporary_error(error):
                         raise
 
