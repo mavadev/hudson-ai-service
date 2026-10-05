@@ -1,10 +1,10 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
-from app.core.prompts import PROMPT_GENERAL
+from app.core.prompts import SYSTEM_PROMPT_CHAT, SYSTEM_PROMPT_TITLE
 from app.schemas.chat import ChatRequest, ChatResponse, HealthResponse
 from app.services.gemini_service import gemini_service
 
@@ -27,36 +27,37 @@ def health_check() -> HealthResponse:
     )
 
 
-@router.post("/chat/general/stream", tags=["Chat"])
-async def chat_general_stream(data: ChatRequest):
+@router.post("/api/chat/stream", tags=["Chat"])
+async def chat_stream_endpoint(request: Request, body: ChatRequest):
     return StreamingResponse(
         gemini_service.generate_stream_response(
-            system_prompt=PROMPT_GENERAL,
-            user_message=data.user_message,
-            history=data.history or [],
+            system_prompt=SYSTEM_PROMPT_CHAT,
+            user_message=body.user_message,
+            history=body.history or [],
+            request=request,
         ),
         media_type="text/event-stream",
     )
 
 
 @router.post(
-    "/chat/general",
+    "/api/chat/title",
     response_model=ChatResponse,
     tags=["Chat"],
 )
-async def chat_general(data: ChatRequest) -> ChatResponse:
-    return await generate_ai_response(
-        system_prompt=PROMPT_GENERAL,
-        user_message=data.user_message,
+async def chat_title_endpoint(body: ChatRequest) -> ChatResponse:
+    return await generate_title_response(
+        system_prompt=SYSTEM_PROMPT_TITLE,
+        user_message=body.user_message,
     )
 
 
-async def generate_ai_response(
+async def generate_title_response(
     system_prompt: str,
     user_message: str,
 ) -> ChatResponse:
     try:
-        response = await gemini_service.generate_response(
+        response = await gemini_service.generate_title_response(
             system_prompt=system_prompt,
             user_message=user_message,
         )
