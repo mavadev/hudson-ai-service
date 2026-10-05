@@ -4,86 +4,101 @@
 
 ## 📖 Descripción
 
-Hudson AI Service es un microservicio desarrollado con **FastAPI** que integra **Google Gemini** para ofrecer capacidades conversacionales mediante una API REST moderna, documentada y preparada para producción.
-
-Su arquitectura modular facilita el mantenimiento, la escalabilidad y la integración con aplicaciones frontend.
+Microservicio en **FastAPI** que conecta **Hudson AI** con **Google Gemini**. Ofrece respuestas en tiempo real mediante streaming, soporte para historial de chat, generación de títulos y un sistema inteligente de reintentos con modelos de respaldo si el servicio principal se satura.
 
 ## 🧪 Explorador de API
 
 <p align="center">
-  <img width="1579" height="996" alt="image" src="https://github.com/user-attachments/assets/beff6ad2-b42a-444a-a9fc-936ff49fb094" />
+  <img width="1579" height="996" alt="image" src="https://github.com/user-attachments/assets/3afdc665-0a8f-4cdd-81b7-99b12fa8bf9d" />
 </p>
 
-> Explora y prueba cada endpoint del servicio mediante la documentación interactiva.
+> Explora y prueba cada endpoint interactivo mediante Swagger UI (`/docs`) y ReDoc (`/redoc`).
 
 ## ✨ Características
 
-- ✅ API REST desarrollada con FastAPI.
-- ✅ Integración con Google Gemini.
-- ✅ Asistente conversacional de propósito general.
-- ✅ Endpoint especializado en consultas de QA.
-- ✅ Documentación automática mediante Swagger y ReDoc.
-- ✅ Arquitectura modular y escalable.
-- ✅ Configuración mediante variables de entorno.
-- ✅ Reintentos automáticos ante errores temporales del proveedor.
-- ✅ Gestión centralizada de prompts.
-- ✅ Preparado para despliegues en producción.
-
+- ⚡ **Respuestas al instante**: Transmisión en tiempo real palabra por palabra mediante streaming (SSE).
+- 🤖 **Google GenAI**: Integrado con el SDK oficial más reciente (`google-genai`).
+- 🔄 **Modo a prueba de fallos**: Si el modelo principal se satura, reintenta automáticamente con un modelo de respaldo.
+- 🛑 **Cancelación inteligente**: Si el usuario cierra el chat, detiene la generación para ahorrar recursos.
+- 🏷️ **Títulos automáticos**: Crea nombres cortos para cada conversación según el primer mensaje.
+- 🧠 **Manejo de contexto**: Controla el historial enviado para priorizar siempre la pregunta actual.
+- 🛡️ **Errores claros**: Traduce fallas de cuotas o API keys en respuestas HTTP amigables.
+  
 ## 🏗️ Arquitectura del proyecto
 
 La aplicación sigue una arquitectura modular donde cada componente tiene una responsabilidad específica, facilitando el mantenimiento, la escalabilidad y la incorporación de nuevas funcionalidades.
 
 ```text
 app/
-├── api/
-├── core/
-├── schemas/
-├── services/
-└── main.py
+├── api/          # Rutas y endpoints
+├── core/         # Configuración y prompts
+├── schemas/      # Modelos de datos (Pydantic)
+├── services/     # Lógica con Gemini y streaming
+└── main.py       # Punto de entrada y CORS
 ```
 
 | Carpeta | Descripción |
 |----------|-------------|
-| **api** | Contiene los endpoints de la API. |
-| **services** | Implementa la comunicación con Google Gemini. |
-| **schemas** | Modelos de validación de solicitudes y respuestas. |
-| **core** | Configuración general y prompts del sistema. |
+| **api** | Define los endpoints del chat, streaming y salud del servicio. |
+| **services** | Gestiona las peticiones a Gemini, reintentos y el streaming. |
+| **schemas** | Valida las solicitudes de entrada y respuestas de la API. |
+| **core** | Maneja variables de entorno y los prompts del sistema. |
 
 ## 🚀 Endpoints disponibles
 
 | Método | Endpoint | Descripción |
 |---------|----------|-------------|
-| GET | `/` | Información del servicio |
-| GET | `/health` | Estado del servicio |
-| POST | `/chat/general` | Asistente conversacional |
-| POST | `/chat/qa` | Asistente especializado en QA |
-| GET | `/docs` | Documentación Swagger |
+| GET | `/` | Estado base del microservicio |
+| GET | `/health` | Chequeo de salud y modelo activo |
+| POST | `/api/chat/title` | Generación del título del chat |
+| POST | `/api/chat/stream` | Chat en vivo por streaming (SSE) |
+| GET | `/docs` | Documentación interactiva Swagger |
 | GET | `/redoc` | Documentación ReDoc |
 
 ## 💬 Ejemplo de solicitud
 
-### POST `/chat/general`
+### 1. Streaming `POST /api/chat/stream`
+### Body (JSON):
 
 ```json
 {
-  "user_message": "¿Qué es una API REST?"
+  "user_message": "Explícame qué es una API REST",
+  "history": [
+      {
+        "role": "user",
+        "content": "Hola"
+      },
+      {
+        "role": "assistant",
+        "content": "¡Hola! ¿En qué te puedo ayudar hoy?"
+      }
+    ]
 }
 ```
+> **Respuesta**: Stream tipo text/event-stream que emite fragmentos de texto progresivamente.
 
-## ✅ Ejemplo de respuesta
+### 2. Generación de Título `POST /api/chat/title`
+### Body (JSON):
 
 ```json
 {
-  "response": "Una API REST permite que diferentes aplicaciones se comuniquen entre sí mediante solicitudes HTTP utilizando recursos y métodos estándar como GET, POST, PUT y DELETE"
+  "user_message": "Necesito ayuda para configurar un servidor Nginx en Ubuntu"
+}
+```
+> **Respuesta** (`200 OK`).
+
+```json
+{
+  "response": "Configuración de Nginx en Ubuntu"
 }
 ```
 
 ## ⚙️ Variables de entorno
 
-Crea un archivo `.env` con las siguientes variables:
+Crea un archivo `.env` en la raìz del proyecto basàndote en la siguiente estructura:
 
 ```env
-GEMINI_API_KEY=your_api_key
+GEMINI_API_KEY=tu_api_key_de_google_ai
 GEMINI_MODEL=gemini-2.5-flash
 ENVIRONMENT=development
 ALLOWED_ORIGINS=http://localhost:3000
@@ -91,66 +106,45 @@ ALLOWED_ORIGINS=http://localhost:3000
 
 ## 💻 Instalación local
 
-Clona el repositorio:
+1. Clona el repositorio:
 
 ```bash
 git clone https://github.com/mavadev/hudson-ai-service.git
 cd hudson-ai-service
 ```
 
-Instala las dependencias:
+2. Crear y activar un entorno virtual (recomendado):
+
+```bash
+python -m venv venv
+source venv/bin/activate  # En Linux/macOS
+# venv\Scripts\activate     # En Windows
+```
+
+3. Instala las dependencias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Ejecuta el servidor:
+4. Ejecuta el servidor en modo desarrollo:
 
 ```bash
 uvicorn app.main:app --reload
 ```
+El servicio estará disponible en: `http://localhost:8000`
 
-La API estará disponible en:
+## 🌐 Despliegue en Producciòn (Render)
 
-```text
-http://localhost:8000
-```
-
-Documentación Swagger:
-
-```text
-http://localhost:8000/docs
-```
-
-Documentación ReDoc:
-
-```text
-http://localhost:8000/redoc
-```
-
-## 🌐 Despliegue
-
-El proyecto está preparado para desplegarse fácilmente en **Render**.
+Este microservicio se encuentra configurado para ejecutarse eficientemente en **Render**.
 
 | Configuración | Valor |
 |---------------|-------|
 | Build Command | `pip install -r requirements.txt` |
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 
-
-## 🔮 Mejoras futuras
-
-- Respuestas en streaming.
-- Memoria conversacional.
-- Carga y análisis de archivos.
-- Métricas de consumo y rendimiento.
-
 ## 📄 Licencia
 
 Este proyecto se distribuye bajo la licencia **MIT**.
 
-<div align="center">
-
 Desarrollado con ❤️ por **Gianmarco Chistama**
-
-</div>
