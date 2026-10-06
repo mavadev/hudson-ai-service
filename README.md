@@ -1,20 +1,22 @@
 <div align="center">
-  <img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/d102a49f-ef59-438e-9691-07dfbffb74fc" />
+  <img alt="image" src="https://github.com/user-attachments/assets/d102a49f-ef59-438e-9691-07dfbffb74fc" />
 </div>
 
-## 📖 Descripción
+### 📖 Descripción
 
 Microservicio en **FastAPI** que conecta **Hudson AI** con **Google Gemini**. Ofrece respuestas en tiempo real mediante streaming, soporte para historial de chat, generación de títulos y un sistema inteligente de reintentos con modelos de respaldo si el servicio principal se satura.
 
-## 🧪 Explorador de API
+----
+### 🧪 Explorador de API
 
 <p align="center">
-  <img width="1579" height="996" alt="image" src="https://github.com/user-attachments/assets/3afdc665-0a8f-4cdd-81b7-99b12fa8bf9d" />
+  <img alt="image" src="https://github.com/user-attachments/assets/3afdc665-0a8f-4cdd-81b7-99b12fa8bf9d" />
 </p>
 
 > Explora y prueba cada endpoint interactivo mediante Swagger UI (`/docs`) y ReDoc (`/redoc`).
 
-## ✨ Características
+----
+### ✨ Características
 
 - ⚡ **Respuestas al instante**: Transmisión en tiempo real palabra por palabra mediante streaming (SSE).
 - 🤖 **Google GenAI**: Integrado con el SDK oficial más reciente (`google-genai`).
@@ -23,8 +25,9 @@ Microservicio en **FastAPI** que conecta **Hudson AI** con **Google Gemini**. Of
 - 🏷️ **Títulos automáticos**: Crea nombres cortos para cada conversación según el primer mensaje.
 - 🧠 **Manejo de contexto**: Controla el historial enviado para priorizar siempre la pregunta actual.
 - 🛡️ **Errores claros**: Traduce fallas de cuotas o API keys en respuestas HTTP amigables.
-  
-## 🏗️ Arquitectura del proyecto
+
+----
+### 🏗️ Arquitectura del proyecto
 
 La aplicación sigue una arquitectura modular donde cada componente tiene una responsabilidad específica, facilitando el mantenimiento, la escalabilidad y la incorporación de nuevas funcionalidades.
 
@@ -37,14 +40,8 @@ app/
 └── main.py       # Punto de entrada y CORS
 ```
 
-| Carpeta | Descripción |
-|----------|-------------|
-| **api** | Define los endpoints del chat, streaming y salud del servicio. |
-| **services** | Gestiona las peticiones a Gemini, reintentos y el streaming. |
-| **schemas** | Valida las solicitudes de entrada y respuestas de la API. |
-| **core** | Maneja variables de entorno y los prompts del sistema. |
-
-## 🚀 Endpoints disponibles
+----
+### 🚀 Endpoints disponibles
 
 | Método | Endpoint | Descripción |
 |---------|----------|-------------|
@@ -55,7 +52,8 @@ app/
 | GET | `/docs` | Documentación interactiva Swagger |
 | GET | `/redoc` | Documentación ReDoc |
 
-## 💬 Ejemplo de solicitud
+----
+### 💬 Ejemplo de solicitud
 
 ### 1. Streaming `POST /api/chat/stream`
 ### Body (JSON):
@@ -93,7 +91,8 @@ app/
 }
 ```
 
-## ⚙️ Variables de entorno
+----
+### ⚙️ Variables de entorno
 
 Crea un archivo `.env` en la raìz del proyecto basàndote en la siguiente estructura:
 
@@ -104,46 +103,53 @@ ENVIRONMENT=development
 ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-## 💻 Instalación local
+----
+### 💻 Instalación local
 
-1. Clona el repositorio:
+**1. Clona el repositorio:**
 
 ```bash
 git clone https://github.com/mavadev/hudson-ai-service.git
 cd hudson-ai-service
 ```
 
-2. Crear y activar un entorno virtual (recomendado):
+**2. Crear y activar un entorno virtual (recomendado):**
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # En Linux/macOS
-# venv\Scripts\activate     # En Windows
+# venv\Scripts\activate   # En Windows
 ```
 
-3. Instala las dependencias:
+**3. Instala las dependencias:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Ejecuta el servidor en modo desarrollo:
+**4. Ejecuta el servidor en modo desarrollo:**
 
 ```bash
 uvicorn app.main:app --reload
 ```
-El servicio estará disponible en: `http://localhost:8000`
 
-## 🌐 Despliegue en Producciòn (Render)
+**5. El servicio estará disponible en: `http://localhost:8000`**
 
-Este microservicio se encuentra configurado para ejecutarse eficientemente en **Render**.
+----
+### 🌐 Despliegue & Entorno de Producción
 
+**Servidor (Render):**
 | Configuración | Valor |
 |---------------|-------|
 | Build Command | `pip install -r requirements.txt` |
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 
-## 📄 Licencia
+**Tecnologías del Entorno:**
+
+[![Stack](https://skillicons.dev/icons?i=py,fastapi,gcp)](https://skillicons.dev)
+
+----
+### 📄 Licencia
 
 Este proyecto se distribuye bajo la licencia **MIT**.
 
